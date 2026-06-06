@@ -1,0 +1,30 @@
+name = "swiftshare-backend"
+main = "src/index.js"
+compatibility_date = "2024-06-06"
+compatibility_flags = [ "nodejs_compat" ]
+
+# =========================================================
+# 1. Durable Objects Binding (For Real-Time WebSockets)
+# =========================================================
+[durable_objects]
+bindings = [
+  { name = "CHAT_ROOM", class_name = "ChatRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChatRoom"]
+# =========================================================
+# 2. D1 Database Binding (SQLite Database)
+# =========================================================
+[[d1_databases]]
+binding = "DB"
+database_name = "swiftshare-db"
+database_id = "b7b50359-43e7-4cf6-824a-42b4355d3cbd" 
+
+# =========================================================
+# 3. KV Namespace Binding (For Profile Image Metadata & Cache)
+# =========================================================
+[[kv_namespaces]]
+binding = "USER_DATA"
+id = "05aeff6f8ce9428bbdb8977c1eca979e"
