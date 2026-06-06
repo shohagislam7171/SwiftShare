@@ -19,7 +19,7 @@ window.SocketEngine = (function() {
             return;
         }
         connect(userData);
-        setupSearchBox(); // সার্চ বার ইনিশিয়ালাইজ করা হলো
+        setupSearchBox(); // সার্চ বার ইনিশিয়ালাইজ করা হলো
     }
 
     function connect(userData) {
@@ -80,60 +80,91 @@ window.SocketEngine = (function() {
     }
 
     // ==========================================
-    // নতুন Search Functionality 
+    // Search Functionality (Updated with UI Fixes)
     // ==========================================
     function setupSearchBox() {
-        const searchInput = document.querySelector('.search-bar input'); // তোমার HTML এর সার্চ বারের সিলেক্টর
-        const searchResultsContainer = document.querySelector('.contact-list'); // যেখানে রেজাল্ট দেখাবে
+        const searchInput = document.getElementById('searchInput'); 
+        const searchResultsContainer = document.getElementById('contactList'); 
         
         if (!searchInput) return;
 
-        searchInput.addEventListener('input', async (e) => {
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
             const query = e.target.value.trim();
             
             if (query.length < 3) {
-                // ৩ অক্ষরের কম হলে সার্চ করবে না, আগের লিস্ট দেখাবে
+                // সার্চ বার খালি থাকলে আগের চ্যাট লিস্ট ফেরত আনবে
+                if(query.length === 0 && window.ChatUIController) {
+                     window.ChatUIController.restoreActiveChats();
+                }
                 return; 
             }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/search`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query })
-                });
+            searchTimeout = setTimeout(async () => {
+                searchResultsContainer.innerHTML = `<div style="text-align:center; padding:10px; color:var(--text-muted);">Searching...</div>`;
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/search`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query })
+                    });
 
-                const data = await response.json();
+                    const data = await response.json();
 
-                if (data.success && data.users.length > 0) {
-                    displaySearchResults(data.users, searchResultsContainer);
-                } else {
-                    searchResultsContainer.innerHTML = `<div class="no-results">No users found for "${query}"</div>`;
+                    if (data.success && data.users.length > 0) {
+                        displaySearchResults(data.users, searchResultsContainer);
+                    } else {
+                        searchResultsContainer.innerHTML = `<div class="empty-state-list" style="text-align: center; padding: 20px; color: var(--text-muted);"><p>No users found for "${query}"</p></div>`;
+                    }
+
+                } catch (error) {
+                    console.error("Search failed:", error);
+                    searchResultsContainer.innerHTML = `<div class="empty-state-list" style="text-align: center; padding: 20px; color: var(--color-danger);"><p>Search error. Try again.</p></div>`;
                 }
-
-            } catch (error) {
-                console.error("Search failed:", error);
-            }
+            }, 500);
         });
     }
 
     function displaySearchResults(users, container) {
         if (!container) return;
-        
-        container.innerHTML = ''; // আগের লিস্ট ক্লিয়ার করা
+        container.innerHTML = ''; 
 
-        users.forEach(user => {
+        // বর্তমান লগিন করা ইউজারের ID বাদ দিয়ে অন্যদের দেখাবে
+        let myUserId = null;
+        try {
+            const userData = JSON.parse(localStorage.getItem('swiftshare_user'));
+            myUserId = userData?.id;
+        } catch (e) {
+            console.error("Error parsing user data");
+        }
+
+        const filteredUsers = users.filter(user => user.id !== myUserId);
+
+        if(filteredUsers.length === 0) {
+             container.innerHTML = `<div class="empty-state-list" style="text-align: center; padding: 20px; color: var(--text-muted);"><p>No other users found.</p></div>`;
+             return;
+        }
+
+        filteredUsers.forEach(user => {
             const userDiv = document.createElement('div');
-            userDiv.className = 'contact-item'; // তোমার CSS ক্লাস অনুযায়ী
+            userDiv.className = 'chat-item'; // index.html এর CSS ক্লাস অনুযায়ী
+            
+            const avatarSrc = user.profile_pic && user.profile_pic !== 'default.jpg' 
+                                ? user.profile_pic 
+                                : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`;
+
             userDiv.innerHTML = `
-                <img src="${user.profile_pic || 'default.jpg'}" alt="${user.name}" class="contact-avatar">
-                <div class="contact-info">
-                    <h4>${user.name}</h4>
-                    <p>@${user.username}</p>
+                <img src="${avatarSrc}" alt="${user.name}" class="avatar">
+                <div class="chat-item-info">
+                    <div class="chat-item-header">
+                        <span class="chat-item-name">${user.name}</span>
+                    </div>
+                    <div class="chat-item-last-msg" style="font-size: 0.8rem;">@${user.username}</div>
                 </div>
             `;
             
-            // ক্লিক করলে চ্যাট ওপেন হবে
             userDiv.addEventListener('click', () => {
                 if(window.ChatUIController) {
                     window.ChatUIController.openChatWith(user);

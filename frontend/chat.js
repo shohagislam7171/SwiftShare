@@ -82,7 +82,7 @@ window.ChatUIController = (function() {
         }
         
         openChat(chatData);
-        UI.searchInput.value = ''; // সার্চ ক্লিয়ার করো
+        UI.searchInput.value = ''; // সার্চ ক্লিয়ার করো
     }
 
     function openChat(peerData) {
@@ -118,7 +118,9 @@ window.ChatUIController = (function() {
         if (msgData.type === 'file') {
             contentHTML = `
                 <div class="msg-bubble file-bubble">
-                    <div class="file-icon">📁</div>
+                    <div class="file-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                    </div>
                     <div class="file-details">
                         <span class="file-name">${msgData.fileName}</span>
                         <span class="file-size">${msgData.fileSize}</span>
@@ -180,12 +182,38 @@ window.ChatUIController = (function() {
 
         // Search Bar Event (Local filtering for active chats)
         UI.searchInput.addEventListener('input', (e) => {
-             // গ্লোবাল সার্চ এখন websocket.js হ্যান্ডেল করছে, 
-             // এখানে শুধু স্টাইলিং বা লোকাল ফিল্টার রাখা যেতে পারে।
              const term = e.target.value.toLowerCase();
              if (term.length === 0) {
                  renderContactList(Array.from(activeChatUsers.values()));
              }
+        });
+
+        // File Selection Handler
+        UI.fileInput.addEventListener('change', (e) => {
+            if(e.target.files.length > 0 && activeChatId) {
+                const file = e.target.files[0];
+                const fileMsg = {
+                    fileName: file.name,
+                    fileSize: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+                    sender: 'me',
+                    type: 'file',
+                    time: getCurrentTime()
+                };
+                appendMessageToUI(fileMsg);
+            }
+        });
+
+        // Call Buttons Logic
+        UI.startVideoCallBtn.addEventListener('click', () => {
+            if(window.MediaEngine && activeChatId) {
+                window.MediaEngine.initiateCall(activeChatId, true);
+            }
+        });
+
+        UI.startAudioCallBtn.addEventListener('click', () => {
+            if(window.MediaEngine && activeChatId) {
+                window.MediaEngine.initiateCall(activeChatId, false);
+            }
         });
     }
 
@@ -213,7 +241,13 @@ window.ChatUIController = (function() {
     // Public API
     return {
         init: init,
-        openChatWith: openChatWithUser, // নতুন ফাংশনটি এক্সপোর্ট করা হলো
+        openChatWith: openChatWithUser,
+        
+        // সার্চ বার ক্লিয়ার করলে আগের চ্যাট ফেরত আনার জন্য নতুন ফাংশন
+        restoreActiveChats: function() {
+            renderContactList(Array.from(activeChatUsers.values()));
+        },
+        
         receiveMessage: function(senderId, msgData) {
             if(!chatHistoryCache[senderId]) chatHistoryCache[senderId] = [];
             chatHistoryCache[senderId].push(msgData);
