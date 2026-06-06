@@ -13,7 +13,7 @@ window.SocketEngine = (function() {
     const reconnectDelay = 3000; // 3 seconds
     
     // TODO: Replace this with your actual Cloudflare Worker WebSocket URL later
-    const WEBSOCKET_URL = 'wss://your-cloudflare-worker-url.workers.dev/chat';
+    const WEBSOCKET_URL = 'wss://swiftshare-backend.mdshohagislam30.workers.dev/';
 
     // --- 2. Initialization & Connection ---
     function init(userData) {

@@ -1,24 +1,18 @@
 /**
  * SwiftShare - Premium SaaS Chat & Calling Application
  * File: auth.js
- * Description: Handles User Authentication (Login, Signup, Forgot Password),
- * Profile Image Preview, Session Management, and API communication.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- 1. DOM Elements Selection ---
-    
-    // Screens
     const authScreen = document.getElementById('authScreen');
     const mainApp = document.getElementById('mainApp');
     
-    // Forms
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
     const forgotForm = document.getElementById('forgotForm');
     const otpSection = document.getElementById('otpSection');
     
-    // Toggles & Buttons
     const switchToSignup = document.getElementById('switchToSignup');
     const switchToLogin = document.getElementById('switchToLogin');
     const forgotBtn = document.getElementById('forgotBtn');
@@ -26,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendOtpBtn = document.getElementById('sendOtpBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     
-    // Inputs
     const signupPhoto = document.getElementById('signupPhoto');
     const picPreview = document.getElementById('picPreview');
     const loginIdentifier = document.getElementById('loginIdentifier');
@@ -35,12 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const signupMobile = document.getElementById('signupMobile');
     const signupPassword = document.getElementById('signupPassword');
     
-    // Profile UI in Main App
     const myName = document.getElementById('myName');
     const myProfilePic = document.getElementById('myProfilePic');
 
-    // Base API URL (Will be configured for Cloudflare Workers later)
-    const API_BASE_URL = '/api'; 
+    // =========================================================
+    // এখানেই তোমার লিংক বসাতে হবে! 👇
+    // =========================================================
+    const API_BASE_URL = 'https://swiftshare-backend.mdshohagislam30.workers.dev'; 
+    // =========================================================
 
     // --- 2. Initial Session Check ---
     function checkSession() {
@@ -53,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 3. UI Toggle Controllers ---
-    
     function hideAllForms() {
         loginForm.classList.remove('active-form');
         loginForm.classList.add('hidden-form');
@@ -96,14 +90,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- 4. Profile Image Preview Handling ---
-    
     signupPhoto.addEventListener('change', function(e) {
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = function(event) {
                 picPreview.style.backgroundImage = `url(${event.target.result})`;
-                picPreview.innerHTML = ''; // Remove the SVG icon
+                picPreview.innerHTML = '';
                 picPreview.style.border = '2px solid var(--accent-glow-1)';
             };
             reader.readAsDataURL(file);
@@ -111,14 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- 5. Authentication API Logic ---
-
-    // Generic error notification
     function showError(message) {
-        // In a real SaaS, use a toast notification. Using alert for structural baseline.
         alert(`Authentication Error: ${message}`);
     }
 
-    // Login Submission
+    // Login Submission (আসল API কল করা হয়েছে)
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const identifier = loginIdentifier.value.trim();
@@ -131,35 +121,22 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.innerHTML = 'Authenticating...';
 
         try {
-            // Simulated API Call structure for Cloudflare Worker Backend
-            /*
-            const response = await fetch(`${API_BASE_URL}/login`, {
+            const response = await fetch(`${API_BASE_URL}/api/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ identifier, password })
             });
+            
             const data = await response.json();
-            if(!response.ok) throw new Error(data.message);
-            */
-
-            // Development fallback simulation (Remove when API is ready)
-            const simulatedData = {
-                token: 'mock_jwt_token_12345',
-                user: {
-                    id: 'UID' + Math.floor(Math.random() * 90000),
-                    username: identifier,
-                    name: 'Md Shohag Islam', // Required default fallback
-                    profilePic: 'shohag.jpg',
-                    mobile: '01XXXXXXXXX'
-                }
-            };
+            
+            if(!response.ok) throw new Error(data.message || 'Login failed');
 
             // Save session
-            localStorage.setItem('swiftshare_token', simulatedData.token);
-            localStorage.setItem('swiftshare_user', JSON.stringify(simulatedData.user));
+            localStorage.setItem('swiftshare_token', data.token);
+            localStorage.setItem('swiftshare_user', JSON.stringify(data.user));
             
             // Transition to main app
-            activateMainApp(simulatedData.user);
+            activateMainApp(data.user);
 
         } catch (error) {
             showError(error.message || 'Failed to connect to server.');
@@ -169,13 +146,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Signup Submission
+    // Signup Submission (আসল API কল করা হয়েছে)
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = signupUsername.value.trim();
         const mobile = signupMobile.value.trim();
         const password = signupPassword.value.trim();
-        const photoFile = signupPhoto.files[0];
         const submitBtn = signupForm.querySelector('button[type="submit"]');
 
         if (!username || !mobile || !password) return showError('Please fill all required fields.');
@@ -184,33 +160,23 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.innerHTML = 'Creating Account...';
 
         try {
-            // We use FormData to handle image uploads for Cloudflare R2
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('mobile', mobile);
-            formData.append('password', password);
-            if (photoFile) formData.append('profilePic', photoFile);
-
-            /*
-            const response = await fetch(`${API_BASE_URL}/signup`, {
+            const response = await fetch(`${API_BASE_URL}/api/signup`, {
                 method: 'POST',
-                body: formData
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, mobile, password })
             });
+            
             const data = await response.json();
-            if(!response.ok) throw new Error(data.message);
-            */
+            
+            if(!response.ok) throw new Error(data.message || 'Signup failed');
 
-            // Simulation
-            setTimeout(() => {
-                alert('Account created successfully! Please login.');
-                switchToLogin.click();
-                loginIdentifier.value = username; // Auto-fill
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Create Account';
-            }, 1000);
-
+            alert('Account created successfully! Please login.');
+            switchToLogin.click();
+            loginIdentifier.value = username; 
+            
         } catch (error) {
             showError(error.message);
+        } finally {
             submitBtn.disabled = false;
             submitBtn.innerHTML = 'Create Account';
         }
@@ -223,7 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         sendOtpBtn.innerHTML = 'Sending...';
         
-        // Simulate OTP Send
         setTimeout(() => {
             sendOtpBtn.style.display = 'none';
             otpSection.classList.remove('hidden-form');
@@ -236,12 +201,10 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('swiftshare_token');
         localStorage.removeItem('swiftshare_user');
         
-        // Reset UI
         mainApp.classList.add('hidden');
         authScreen.classList.add('active');
         loginPassword.value = '';
         
-        // Disconnect WebSockets if active
         if(window.ChatEngine && window.ChatEngine.disconnect) {
             window.ChatEngine.disconnect();
         }
@@ -252,18 +215,15 @@ document.addEventListener('DOMContentLoaded', () => {
         authScreen.classList.remove('active');
         mainApp.classList.remove('hidden');
         
-        // Populate User Info
         myName.textContent = userData.name || userData.username;
         if(userData.profilePic) {
             myProfilePic.src = userData.profilePic;
         }
 
-        // Initialize Chat Engine & WebSockets
         if(window.ChatEngine && window.ChatEngine.init) {
             window.ChatEngine.init(userData);
         }
     }
 
-    // Run Initial Check
     checkSession();
 });

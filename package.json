@@ -21,6 +21,6 @@
   "license": "MIT",
   "devDependencies": {
     "prettier": "^3.0.0",
-    "wrangler": "^3.0.0"
+    "wrangler": "^4.98.0"
   }
 }
