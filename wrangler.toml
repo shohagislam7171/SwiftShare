@@ -1,0 +1,32 @@
+name = "swiftshare-backend"
+main = "src/index.js"
+compatibility_date = "2024-06-06"
+compatibility_flags = [ "nodejs_compat" ]
+
+# =========================================================
+# 1. Durable Objects Binding (For Real-Time WebSockets)
+# =========================================================
+[durable_objects]
+bindings = [
+  { name = "CHAT_ROOM", class_name = "ChatRoom" }
+]
+
+# Durable Objects requires migrations when creating a new class
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatRoom"]
+
+# =========================================================
+# 2. D1 Database Binding (SQLite Database)
+# =========================================================
+[[d1_databases]]
+binding = "DB"
+database_name = "swiftshare-db"
+database_id = "your-d1-database-id-here" # ক্লাউডফ্লেয়ার ড্যাশবোর্ড থেকে আইডি নিয়ে এখানে বসাতে হবে
+
+# =========================================================
+# 3. R2 Storage Binding (For Profile Pictures & Files)
+# =========================================================
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "swiftshare-storage"

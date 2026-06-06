@@ -1,0 +1,26 @@
+{
+  "name": "swiftshare-backend",
+  "version": "1.0.0",
+  "description": "Premium SaaS P2P Chat and Calling Application built with Cloudflare Workers.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute swiftshare-db --file=./schema.sql --remote",
+    "db:local": "wrangler d1 execute swiftshare-db --file=./schema.sql --local",
+    "format": "prettier --write '**/*.{js,css,html,json}'"
+  },
+  "keywords": [
+    "webrtc",
+    "cloudflare-workers",
+    "durable-objects",
+    "chat-app",
+    "saas"
+  ],
+  "author": "Md Shohag Islam",
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "^3.0.0",
+    "wrangler": "^3.0.0"
+  }
+}
