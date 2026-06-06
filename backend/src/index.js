@@ -19,14 +19,20 @@ async function handleRequest(request, env) {
     const path = url.pathname;
     const method = request.method;
 
+    // --- 1. CORS Preflight Handling ---
     if (method === 'OPTIONS') {
         return new Response(null, { headers: getCorsHeaders(), status: 204 });
     }
 
     try {
+        // --- 2. API Routes ---
         if (path === '/api/signup' && method === 'POST') return await handleSignup(request, env);
         if (path === '/api/login' && method === 'POST') return await handleLogin(request, env);
         
+        // নতুন Search API Route
+        if (path === '/api/search' && method === 'POST') return await handleSearch(request, env);
+        
+        // --- 3. WebSocket Upgrade Route (/chat) ---
         if (path === '/chat') {
             if (request.headers.get('Upgrade') !== 'websocket') {
                 return new Response('Expected Upgrade: websocket', { status: 426 });
@@ -36,6 +42,7 @@ async function handleRequest(request, env) {
             return await obj.fetch(request);
         }
 
+        // --- 4. Fallback/404 ---
         return new Response(JSON.stringify({ error: "Not Found" }), { 
             status: 404, 
             headers: { 'Content-Type': 'application/json', ...getCorsHeaders() } 
@@ -48,9 +55,35 @@ async function handleRequest(request, env) {
     }
 }
 
+// ==========================================
+// নতুন Search API ফাংশন (গ্লোবাল ইউজার খোঁজার জন্য)
+// ==========================================
+async function handleSearch(request, env) {
+    try {
+        const { query } = await request.json();
+        
+        if (!query) {
+            return apiResponse({ success: false, message: "Search query is empty." }, 400);
+        }
+
+        // মোবাইল নাম্বার অথবা ইউজারনেম দিয়ে ডাটাবেসে খোঁজার লজিক
+        const searchResult = await env.DB.prepare(
+            "SELECT id, username, name, profile_pic FROM Users WHERE mobile = ? OR username LIKE ? LIMIT 10"
+        ).bind(query, `%${query}%`).all();
+
+        return apiResponse({ success: true, users: searchResult.results }, 200);
+
+    } catch (err) {
+        return apiResponse({ success: false, message: err.message }, 500);
+    }
+}
+
+// ==========================================
+// Signup API ফাংশন
+// ==========================================
 async function handleSignup(request, env) {
     try {
-        const data = await request.json(); // formData এর বদলে json ব্যবহার করা বেশি নিরাপদ
+        const data = await request.json(); 
         const { username, mobile, password } = data;
 
         if (!username || !mobile || !password) {
@@ -72,6 +105,9 @@ async function handleSignup(request, env) {
     }
 }
 
+// ==========================================
+// Login API ফাংশন
+// ==========================================
 async function handleLogin(request, env) {
     try {
         const { identifier, password } = await request.json();
@@ -103,6 +139,9 @@ async function handleLogin(request, env) {
     }
 }
 
+// ==========================================
+// Utility ফাংশন
+// ==========================================
 function apiResponse(data, status = 200) {
     return new Response(JSON.stringify(data), {
         status: status,
